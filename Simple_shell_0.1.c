@@ -136,6 +136,8 @@ int main(void)
   char **args;
   int status;
 
+  status = 1;
+
   do {
       printf("($) ");
       line = read_line();
