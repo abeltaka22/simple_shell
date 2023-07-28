@@ -88,13 +88,19 @@ return (-1);
 /**
 * execute_command- Function to execute an external command
 * @args: An array of strings containing the command and its arguments
-* Return: 1 if shell should continue execution, 0 if the "exit" command is used
+* Return: 1 if shell should continue execution, 0 if the "exit" command is used or -1 if error occours.
 */
 int execute_command(char **args)
 {
 pid_t pid;
 int status;
-
+int interactive;/*assume interactive mode by default*/
+interactive = 1;
+/*check if the input is coming from stdin (non-interactive)
+if (!isatty(STDIN_FILENO))
+{
+interactive = 0;
+}
 pid = fork();
 
 if (pid == 0)
@@ -118,25 +124,37 @@ perror("Error");
 }
 else
 {
+if (interactive) {/*wait for the child process to complete (interactive mode)*/
 do {
 waitpid(pid, &status, WUNTRACED);
 } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 }
+else 
+{/**
+*for non-interactive mode, we don't wait for the child process,
+*instead, we return immediately so that the shell can continue
+*/
 return (1);
 }
+}
+return (1);
+}
+
 /**
  * main - Entry point of the program.
- *
+ *@argc: The count of arguments passed to the function.
+*@argv:  An array of arguments passed to the function.
  * Return: Always 0.
  */
-int main(void)
+int main(int argc, char **argv)
 {
 char *line;
 char **args;
 int status;
-
 status = 1;
 
+if (argc == 1) 
+{/*interactive mode*/
 do {
 printf("($) ");
 line = read_line();
@@ -158,5 +176,25 @@ status = 0;
 free(line);
 free(args);
 } while (status);
+}
+else if (argc == 2)
+{/*arguments provided, run the shell in non-interactive move*/
+FILE *file =fopen(argv[1], "r");
+if (file == NULL)
+{
+perror("Error opening file");
+return (1);
+}
+/*redirect standard input to the file*/
+dup2(fileno(file), STDIN_FILENO);
+fclose(file);
+/*execute commands from standard input*/
+execute_commands_from_stdin();
+}
+else
+{
+fprintf(stderr, "Usage: %s [script]\n", argv[0];
+return (1);
+}
 return (0);
 }
