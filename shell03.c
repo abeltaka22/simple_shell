@@ -11,11 +11,12 @@
 * read_line- function to read a line of input from the user
 * Return: line
 */
-char *read_line() {
-        char *line = NULL;
-        size_t bufsize = 0;
-        getline(&line, &bufsize, stdin);
-        return line;
+char *read_line()
+{
+char *line = NULL;
+size_t bufsize = 0;
+getline(&line, &bufsize, stdin);
+return line;
 }
 
 /**

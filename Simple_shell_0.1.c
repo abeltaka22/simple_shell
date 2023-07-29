@@ -87,8 +87,8 @@ return (-1);
 
 /**
 * execute_command- Function to execute an external command
-* @args: An array of strings containing the command and its arguments
-* Return: 1 if shell should continue execution, 0 if the "exit" command is used or -1 if error occours.
+* @args: array of strings with command and its arguments
+* Return: 1 shell to continue execution, 0 if exit command used, -1 if* error.
 */
 int execute_command(char **args)
 {
@@ -96,7 +96,7 @@ pid_t pid;
 int status;
 int interactive;/*assume interactive mode by default*/
 interactive = 1;
-/*check if the input is coming from stdin (non-interactive)
+/*check if the input is coming from stdin (non-interactive)*/
 if (!isatty(STDIN_FILENO))
 {
 interactive = 0;
@@ -124,12 +124,13 @@ perror("Error");
 }
 else
 {
-if (interactive) {/*wait for the child process to complete (interactive mode)*/
+if (interactive)
+{/*wait for the child process to complete (interactive mode)*/
 do {
 waitpid(pid, &status, WUNTRACED);
 } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 }
-else 
+else
 {/**
 *for non-interactive mode, we don't wait for the child process,
 *instead, we return immediately so that the shell can continue
@@ -139,7 +140,37 @@ return (1);
 }
 return (1);
 }
+/**
+* execute_commands_from_stdin - Function to read and execute commands from standard input in
+non-interactive mode.
+*/
+void execute_commands_from_stdin(void)
+{
+char *line;
+char **args;
+int status = 1;
 
+do {
+line = read_line();
+args = parse_line(line);
+
+if (args[0] != NULL)
+{
+int builtin_status = execute_builtin(args);
+
+if (builtin_status == -1)
+{
+status = execute_command(args);
+}
+else if (builtin_status == 0)
+{
+status = 0;
+}
+}
+free(line);
+free(args);
+} while (status);
+}
 /**
  * main - Entry point of the program.
  *@argc: The count of arguments passed to the function.
@@ -153,9 +184,10 @@ char **args;
 int status;
 status = 1;
 
-if (argc == 1) 
+if (argc == 1)
 {/*interactive mode*/
-do {
+while  (status)
+{
 printf("($) ");
 line = read_line();
 args = parse_line(line);
@@ -179,7 +211,7 @@ free(args);
 }
 else if (argc == 2)
 {/*arguments provided, run the shell in non-interactive move*/
-FILE *file =fopen(argv[1], "r");
+FILE *file = fopen(argv[1], "r");
 if (file == NULL)
 {
 perror("Error opening file");
@@ -193,7 +225,7 @@ execute_commands_from_stdin();
 }
 else
 {
-fprintf(stderr, "Usage: %s [script]\n", argv[0];
+fprintf(stderr, "Usage: %s [script]\n", argv[0]);
 return (1);
 }
 return (0);
